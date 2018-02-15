@@ -14,16 +14,17 @@ module.exports =
 class AutoUpdateManager
   Object.assign @prototype, EventEmitter.prototype
 
-  constructor: (@version, @testMode, resourcePath, @config) ->
+  constructor: (@version, @testMode, @config) ->
     @state = IdleState
     @iconPath = path.resolve(__dirname, '..', '..', 'resources', 'atom.png')
-    @feedUrl = "https://atom.io/api/updates?version=#{@version}"
-    process.nextTick => @setupAutoUpdater()
 
-  setupAutoUpdater: ->
+  initialize: ->
     if process.platform is 'win32'
+      archSuffix = if process.arch is 'ia32' then '' else '-' + process.arch
+      @feedUrl = "https://atom.io/api/updates#{archSuffix}?version=#{@version}"
       autoUpdater = require './auto-updater-win32'
     else
+      @feedUrl = "https://atom.io/api/updates?version=#{@version}"
       {autoUpdater} = require 'electron'
 
     autoUpdater.on 'error', (event, message) =>
@@ -117,24 +118,26 @@ class AutoUpdateManager
   onUpdateNotAvailable: =>
     autoUpdater.removeListener 'error', @onUpdateError
     {dialog} = require 'electron'
-    dialog.showMessageBox
+    dialog.showMessageBox {
       type: 'info'
       buttons: ['OK']
       icon: @iconPath
       message: 'No update available.'
       title: 'No Update Available'
       detail: "Version #{@version} is the latest version."
+    }, -> # noop callback to get async behavior
 
   onUpdateError: (event, message) =>
     autoUpdater.removeListener 'update-not-available', @onUpdateNotAvailable
     {dialog} = require 'electron'
-    dialog.showMessageBox
+    dialog.showMessageBox {
       type: 'warning'
       buttons: ['OK']
       icon: @iconPath
       message: 'There was an error checking for updates.'
       title: 'Update Error'
       detail: message
+    }, -> # noop callback to get async behavior
 
   getWindows: ->
-    global.atomApplication.windows
+    global.atomApplication.getAllWindows()
