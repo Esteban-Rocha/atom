@@ -236,7 +236,7 @@ class ApplicationDelegate {
         return chosen
       } else {
         const callback = buttons[buttonLabels[chosen]]
-        if (typeof callback === 'function') callback()
+        if (typeof callback === 'function') return callback()
       }
     }
   }
@@ -249,7 +249,7 @@ class ApplicationDelegate {
       this.getCurrentWindow().showSaveDialog(options, callback)
     } else {
       // Sync
-      if (typeof params === 'string') {
+      if (typeof options === 'string') {
         options = {defaultPath: options}
       }
       return this.getCurrentWindow().showSaveDialog(options)
